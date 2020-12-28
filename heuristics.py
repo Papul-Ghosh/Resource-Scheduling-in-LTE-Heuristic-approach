@@ -6,6 +6,14 @@ import random
 import matplotlib.pyplot as plt
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
+import time
+
+'''
+THIS PROGRAM IS THE SOURCE CODE FOR OPTIMIZING PROBLEM IN LTE CELLULAR NETWORK
+THIS PROGRAM IS PART OF THE ASSIGNMET FOR TRAFFIC ENGINEERING COURSE IN TUHH WS 2019
+
+GROUP MEMBERS: SATISH, PAPUL
+'''
 
 
 def calc_distance(a, b):
@@ -29,6 +37,8 @@ def calc_power(source, dest):
     pwr_dBm = 26 - fspl(distance)
     pwr_mw = 10**(pwr_dBm/10)
     #print(pwr_mw)
+    
+ 
     return round(pwr_mw * 100000, 2)
     
 def fitness(x):
@@ -39,9 +49,10 @@ def fitness(x):
         bs= node_dict[0]['location']
         d2d_tx = node_dict[2*d2d- int(n/2)+1]['location']
         d2d_rx = node_dict[2*d2d- int(n/2)+2]['location']
-
+        #print(cell, bs, d2d_tx, d2d_rx)
         intf+= calc_power(cell,d2d_rx)
         intf+= calc_power(d2d_tx,bs)
+      
     return intf
 
 def min_intf(x):
@@ -150,7 +161,8 @@ if __name__ == "__main__":
 
     rb=[['']*m]*n
     
-
+ 
+    prev_time = time.time()
     encode()
     for p in range(5*n):
         select=[]
@@ -166,17 +178,14 @@ if __name__ == "__main__":
         if fitness(select[i])<intf:
             intf= fitness(select[i])
             seq= select[i]
-
-    print()
-    for c in range(len(seq)):
-        print('Rb ',c+1,': ',seq[c])
-    print('Min. interference value: ',intf)
-
-
-    G = nx.Graph()
+    optimized_time = time.time() - prev_time 
+  
+    
+    G = nx.DiGraph()
     for node in range(len(node_dict)):
         if node== 0:
             G.add_node(node)
+
 
 
     for r in seq:
@@ -187,14 +196,63 @@ if __name__ == "__main__":
         d2d_rx = 2*d2d- int(n/2)+2
         G.add_edge(cell, bs)
         G.add_edge(d2d_tx, d2d_rx)
-        G[cell][bs]['rb']= 'rb-'+str(seq.index(r))
-        G[d2d_tx][d2d_rx]['rb']= 'rb-'+str(seq.index(r))
+        G[cell][bs]['rb']= 'RB:'+str(seq.index(r))
+        G[d2d_tx][d2d_rx]['rb']= 'RB:'+str(seq.index(r))+  str('      >>>>>>           ')
 
     pos= {key:node_dict[key]['location'] for key in node_dict}
     nx.draw(G, pos, with_labels = True)
     labels = nx.get_edge_attributes(G, 'rb')
     nx.draw_networkx_edge_labels(G, pos, edge_labels = labels)
     plt.show()
-        
-
     
+    
+    
+    print('\n\n#################################RESULTS#################################')
+    print('#################################RESULTS#################################')
+    print('#################################RESULTS#################################\n\n')
+          
+   
+
+
+
+    plt.subplots(1)
+    #x = fig.add_subplot(1)
+    block = 10
+
+    string_dict = {}
+    for c in range(len(seq)):
+        temp = 0
+        for val in range(len(seq[c])):
+            #print(c, val)
+            
+            link_value  = int(seq[c][val])
+            if link_value :
+                temp  = '###RB ' + str(c) + '  ' + str(node_dict[val+1]['type'])[:4] + '  no.  '+ str(val+1)
+                print(temp)
+                if c in string_dict:
+                    string_dict[c] =  temp +' pair  AND  ' +  string_dict[c][12:] 
+                else:
+                    string_dict[c] =  temp
+
+ 
+    width = 0.4      
+    for i in range(m):
+  
+        plt.bar(1, block, bottom=(i)*block, tick_label = 'RB for time slot 0')
+        plt.text(0.7,1.2-0.10*m + 10*i, string_dict[i], style='italic', color = 'w')
+        
+    for c in range(len(seq)):
+        
+        for val in range(len(seq[c])):
+            #print(c, val)
+            link_value  = int(seq[c][val])
+            if link_value :
+                print(' ##RB:',c, node_dict[val+1]['type'], 'number', val+1 )
+
+
+
+
+    temp =('\nOptmization time : ' +str(round(optimized_time, 3)) + ' seconds \nOptimized interference value:  '+ str(intf)+  'x 10^ -8 mW')           
+    plt.text(0.7, - 1.4*m, temp, style='italic', color = 'b')
+    print(temp)
+
